@@ -8,7 +8,7 @@ calibration_values = input.split("\n")
 # I had to use this to identify the last
 # value in strings with overlapping charachters
 # For example:
-# 5twoone
+# 5twone
 # Would return 5 and two
 #
 # Normal regex "consumes" the "two", leaving only "ne" which does not match
