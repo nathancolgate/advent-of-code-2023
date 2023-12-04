@@ -1,0 +1,11 @@
+version: "3.4"
+services:
+  app:
+    image: ruby:3.1-slim-buster
+    working_dir: /app
+    volumes:
+      - .:/app
+      - bundle_cache:/usr/local/bundle
+volumes:
+  bundle_cache:
+    driver: local

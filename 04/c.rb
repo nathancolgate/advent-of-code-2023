@@ -29,13 +29,21 @@ time = Benchmark.measure {
     )
   end
 
+  cards_counter = []
+  my_cards.length.times do |i|
+    cards_counter << [i + 1, 1]
+  end
+  cards_counter = cards_counter.to_h
 
-  my_cards.each_with_index do |c,index|
-    c[:n].times do
-      my_cards[(index+1)..(index+c.match_count)].map(&:copy)
+  my_cards.each_with_index do |card, index|
+    index += 1
+
+    (1..card.match_count).each do |offset|
+      cards_counter[index + offset] += cards_counter[index]
     end
   end
-  puts my_cards.map {|c| c[:n]}.sum
+
+  puts cards_counter.map { |c| c[1] }.sum
 }
 puts time.real
 
