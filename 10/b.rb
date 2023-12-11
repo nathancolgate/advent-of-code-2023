@@ -1,4 +1,4 @@
-class Pipe
+class Tile
   PIPES = {
     "F" => [:bottom,:right],
     "7" => [:bottom,:left],
@@ -7,15 +7,15 @@ class Pipe
     "-" => [:left,:right],
     "|" => [:bottom,:top]
   }
-  attr_reader :x,:y,:visited,:string
+  attr_accessor :x,:y,:visited,:string,:type
   def initialize(string,x,y)
     @string = string
     @x = x
     @y = y
-    @visited = false
+    @type = :unknown
   end
   def next(direction_in)
-    @visited = true
+    @type = :pipe
     case PIPES[@string].detect {|n| n != direction_in}
     when :top
       [@x,(@y-1),:bottom]
@@ -28,14 +28,21 @@ class Pipe
     end
   end
   def color
-    @visited ? :red : :blue
+    case @type
+    when :pipe
+      :red
+    when :unknown
+      :blue
+    when :nothing
+      :green
+    end
   end
 end
 
 require 'colorize'
 
 input = File.read(File.expand_path("./input.txt"))
-pipes = input.split("\n").each_with_index.map {|l,x| l.each_char.to_a.each_with_index.map {|c,y| Pipe.new(c,y,x)}}
+tiles = input.split("\n").each_with_index.map {|l,x| l.each_char.to_a.each_with_index.map {|c,y| Tile.new(c,y,x)}}
 # puts pipes.inspect
 
 
@@ -61,12 +68,27 @@ iteration = 1
 
 until path1_x == path2_x && path1_y == path2_y do
   iteration += 1
-  path1_x,path1_y,path1_direction = pipes[path1_y][path1_x].next(path1_direction)
-  path2_x,path2_y,path2_direction = pipes[path2_y][path2_x].next(path2_direction)
- end
+  path1_x,path1_y,path1_direction = tiles[path1_y][path1_x].next(path1_direction)
+  path2_x,path2_y,path2_direction = tiles[path2_y][path2_x].next(path2_direction)
+end
+puts tiles[0][139].inspect
+tiles[0][139].type = :nothing
+puts tiles[0][139].inspect
 
-pipes.each do |y|
-  puts y.map {|p| p.string.send(p.color)}.join('')
+tiles.each_with_index do |row,y|
+  row.each_with_index do |tile,x|
+    if (tiles[y-1][x].is_a?(Tile) && tiles[y-1][x].type == :nothing ||
+      tiles[y+1][x].is_a?(Tile) && tiles[y+1][x].type == :nothing ||
+      tiles[y][x-1].is_a?(Tile) && tiles[y][x-1].type == :nothing ||
+      tiles[y][x+1].is_a?(Tile) && tiles[y][x+1].type == :nothing) && tile.type == :unknown
+      puts "#{y} #{x} #{tile.type}" if y == 1
+      # tile.type = :nothing
+    end
+  end
+end
+
+tiles.each do |y|
+  puts y.map {|t| t.string.send(t.color)}.join('')
 end
 
 puts iteration
