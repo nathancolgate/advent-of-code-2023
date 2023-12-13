@@ -1,14 +1,18 @@
-input = File.read(File.expand_path("./sample.txt"))
+input = File.read(File.expand_path("./input.txt"))
 sets = input.split("\n\n")
 puts "There are #{sets.length} sets"
+t = 0
 sets.each_with_index do |set,i|
   # Find the vertical reflection
   vr = nil
   rows = set.split("\n")
-  puts "Set #{i} has #{rows.length} rows"
   rows.length.times do |r|
-    puts "#{rows[r]} <-> #{rows[r+1]}"
-    vr = (r+1)*100 if rows[r] == rows[r+1]
+    a = rows[0..r].reverse
+    b = rows[(r+1)..]
+    length = [[a.length,b.length].min - 1,0].max
+    if a[..length] == b[..length]
+      t += (r+1)*100 
+    end
   end
   # Find the horizontal reflections
   hr = nil
@@ -17,11 +21,15 @@ sets.each_with_index do |set,i|
   colsa.first.length.times do |x|
     cols << colsa.map {|r| r[x]}.join('')
   end
-  puts cols.inspect
   puts "Set #{i} has #{cols.length} cols"
   cols.length.times do |r|
-    puts "#{cols[r]} <-> #{cols[r+1]}"
-    hr = (r+1) if cols[r] == cols[r+1]
+    a = cols[0..r].reverse
+    b = cols[(r+1)..]
+    length = [[a.length,b.length].min - 1,0].max
+    if a[..length] == b[..length]
+      t += (r+1)
+    end
   end
-  puts (vr*100)+hr
 end
+
+puts t
