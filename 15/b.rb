@@ -1,3 +1,6 @@
+require 'benchmark'
+
+time = Benchmark.measure {
 def process(string)
   if string.include?('-')
     operation = :remove
@@ -25,7 +28,7 @@ boxes = Array.new(LIMIT)
 LIMIT.times do |i|
   boxes[i] = {}
 end
-puts sets.map {|s| process(s)}.inspect
+
 sets.each do |set|
   box_index,operation,focal_length,label = process(set)
   if operation == :remove
@@ -35,11 +38,11 @@ sets.each do |set|
   end
 end
 
-puts boxes.inspect
-
 j = boxes.each_with_index.flat_map do |box,box_index|
   box.keys.each_with_index.map do |label,lense_index|
     (box_index+1)*(lense_index+1)*(box[label])
   end
 end
 puts j.sum
+}
+puts time.real
