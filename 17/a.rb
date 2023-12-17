@@ -1,0 +1,179 @@
+require 'rgl/adjacency'
+require 'rgl/dijkstra'
+require 'rgl/dot'
+require 'colorize'
+
+class Block
+  attr_reader :x, :y, :heat_loss, :identifier
+  def initialize(x,y,heat_loss,map)
+    @map = map
+    @x = x
+    @y = y
+    @heat_loss = heat_loss.to_i
+    @start = false
+    @finish = false
+    # if heat_loss == "S"
+    #   @heat_loss = ("a".."z").to_a.index("a")
+    #   @start = true
+    # end
+    # if heat_loss == "E"
+    #   @heat_loss = ("a".."z").to_a.index("z")
+    #   @finish = true
+    # end
+    @identifier = "#{@x}-#{@y}"
+  end
+
+  def n?
+    check(@y-1,@x)
+  end
+
+  def e?
+    check(@y,@x+1)
+  end
+
+  def s?
+    check(@y+1,@x)
+  end
+
+  def w?
+    check(@y,@x-1)
+  end
+
+  def check(y,x)
+    if y >= 0 && y <= 12 && x >= 0 && x <= 12
+      [@map.matrix[y][x].identifier,@map.matrix[y][x].heat_loss]
+    end
+  end
+end
+
+class Map
+  attr_reader :cycles, :edge_weights
+  def initialize(file)
+    @file = file
+    @edge_weights = {}
+    parse
+  end
+
+  def finish
+    ObjectSpace.each_object(Block).detect {|e| e.x == 12 && e.y == 12 }
+  end
+
+  def shortest_path(start_identifier)
+    graph = RGL::DirectedAdjacencyGraph.new
+    @edge_weights.each { |(intersection1, intersection2), w| graph.add_edge(intersection1, intersection2) }
+    # graph.write_to_graphic_file('jpg')
+    graph.dijkstra_shortest_path(@edge_weights, start_identifier, finish.identifier)
+  end
+
+  def remove(s,f)
+    puts "Removing #{s.inspect},#{f.inspect}"
+    @edge_weights.delete([s,f])
+    @edge_weights.delete([f,s])
+  end
+
+  def vertices
+    @vertices ||= matrix.flat_map {|l| l.map(&:identifier) }
+  end
+
+  def graph
+    RGL::DirectedAdjacencyGraph.new
+  end
+
+  def input
+    File.read(File.expand_path("./#{@file}"))
+  end
+
+  def lines
+    input.split("\n")
+  end
+
+  def matrix
+    @matrix ||= begin
+      m = []
+      lines.each_with_index do |line,y|
+        m[y] = []
+        line.chars.each_with_index do |char,x|
+          m[y][x] = Block.new(x,y,char,self)
+        end
+      end
+      m
+    end
+  end
+
+  def parse
+    matrix.each do |line|
+      line.each do |block|
+        # First is Identifier. Second is heat loss.
+        @edge_weights[[block.identifier,block.n?.first]] = block.n?.last if block.n?
+        @edge_weights[[block.identifier,block.e?.first]] = block.e?.last if block.e?
+        @edge_weights[[block.identifier,block.s?.first]] = block.s?.last if block.s?
+        @edge_weights[[block.identifier,block.w?.first]] = block.w?.last if block.w?
+      end
+    end
+    graph.add_vertices *vertices
+  end
+end
+
+map = Map.new('sample.txt')
+start_id = "0-0"
+final_path = []
+loop do
+  puts "Starting at #{start_id}"
+  shortest = map.shortest_path(start_id)
+  puts shortest.inspect
+  if shortest.length == 4 # no need to solve any more
+    final_path += shortest
+    break
+  end
+
+  loop do
+    n1 = shortest[0].split('-')
+    n2 = shortest[1].split('-')
+    n3 = shortest[2].split('-')
+    n4 = shortest[3].split('-')
+    n5 = shortest[4].split('-')
+    if (n1.first == n2.first) && (n2.first == n3.first) && (n3.first == n4.first) && (n4.first == n5.first)
+      puts "first all same"
+      map.remove(shortest[0],shortest[1])
+      map.remove(shortest[1],shortest[2])
+      map.remove(shortest[2],shortest[3])
+      map.remove(shortest[3],shortest[4])
+      start_id = shortest[3]
+      final_path << shortest.shift
+      final_path << shortest.shift
+      final_path << shortest.shift
+      break
+    elsif (n1.last == n2.last) && (n2.last == n3.last) && (n3.last == n4.last) && (n4.last == n5.last)
+      puts "last all same"
+      map.remove(shortest[0],shortest[1])
+      map.remove(shortest[1],shortest[2])
+      map.remove(shortest[2],shortest[3])
+      map.remove(shortest[3],shortest[4])
+      start_id = shortest[3]
+      final_path << shortest.shift
+      final_path << shortest.shift
+      final_path << shortest.shift
+      break
+    else
+      puts 'good to go'
+      map.remove(shortest[0],shortest[1])
+      final_path << shortest.shift
+    end
+  end
+end
+
+puts '*'*88
+puts final_path.inspect
+
+total = 0
+map.lines.each_with_index do |line,y|
+  v = line.each_char.each_with_index.map do |char,x|
+    b = ObjectSpace.each_object(Block).detect {|e| e.x == x && e.y == y }
+    color = final_path.include?(b.identifier) ? :red : :white
+    total += final_path.include?(b.identifier) ? b.heat_loss : 0
+    char.send(color)
+  end 
+  puts v.join('')
+end
+
+puts total
