@@ -118,52 +118,38 @@ class Map
   end
 end
 
-map = Map.new('sample.txt')
+map = Map.new('input.txt')
 start_id = "0-0"
 final_path = []
 loop do
-  puts "Starting at #{start_id}"
   if start_id == "12-12"
     final_path << start_id
     break 
   end
   shortest = map.shortest_path(start_id)
-  puts shortest.inspect
-
-  total = 0
-  map.lines.each_with_index do |line,y|
-    v = line.each_char.each_with_index.map do |char,x|
-      b = ObjectSpace.each_object(Block).detect {|e| e.x == x && e.y == y }
-      color = shortest.include?(b.identifier) ? :red : :white
-      total += shortest.include?(b.identifier) ? b.heat_loss : 0
-      char.send(color)
-    end 
-    puts v.join('')
-  end
-  puts total
 
   loop do
     distance = shortest.first == "0-0" ? 3 : 4
     same_row = shortest[0..(distance-1)].map {|p| p.split('-').first}.uniq.length == 1
     same_col = shortest[0..(distance-1)].map {|p| p.split('-').last}.uniq.length == 1
     if same_row || same_col
-      puts " all same"
+      # puts " all same"
       map.remove(shortest[distance-1],shortest[distance])
       start_id = shortest[distance-1]
       (distance-1).times do
-        puts "Adding #{shortest.first.inspect}"
+        # puts "Adding #{shortest.first.inspect}"
         final_path << shortest.shift
       end
       break
     else
-      puts 'good to go'
-      puts "Adding #{shortest.first.inspect}"
+      # puts 'good to go'
+      # puts "Adding #{shortest.first.inspect}"
       final_path << shortest.shift
     end
   end
 end
 
-puts '*'*88
+# puts '*'*88
 
 total = 0
 map.lines.each_with_index do |line,y|
