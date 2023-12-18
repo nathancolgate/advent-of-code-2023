@@ -2,10 +2,10 @@ require 'rgl/adjacency'
 require 'rgl/dijkstra'
 require 'rgl/dot'
 require 'colorize'
-MAX=142
+MAX=12
 
 class Block
-  attr_reader :x, :y, :heat_loss, :identifier
+  attr_reader :x, :y, :heat_loss, :identifier,:name
   def initialize(x,y,heat_loss,map)
     @map = map
     @x = x
@@ -21,7 +21,8 @@ class Block
     #   @heat_loss = ("a".."z").to_a.index("z")
     #   @finish = true
     # end
-    @identifier = "#{@x}-#{@y}"
+    @identifier = "a#{@x*200+@y}"
+    @name = "#{@x}-#{@y}"
   end
 
   def n?
@@ -99,6 +100,7 @@ class Map
         m[y] = []
         line.chars.each_with_index do |char,x|
           m[y][x] = Block.new(x,y,char,self)
+          puts "#{m[y][x].identifier},#{m[y][x].name}"
         end
       end
       m
@@ -109,64 +111,15 @@ class Map
     matrix.each do |line|
       line.each do |block|
         # First is Identifier. Second is heat loss.
-        @edge_weights[[block.identifier,block.n?.first]] = block.n?.last if block.n?
-        @edge_weights[[block.identifier,block.e?.first]] = block.e?.last if block.e?
-        @edge_weights[[block.identifier,block.s?.first]] = block.s?.last if block.s?
-        @edge_weights[[block.identifier,block.w?.first]] = block.w?.last if block.w?
+        puts "#{block.identifier},#{block.n?.first},NORTH,#{block.n?.last}" if block.n?
+        puts "#{block.identifier},#{block.e?.first},EAST,#{block.e?.last}" if block.e?
+        puts "#{block.identifier},#{block.s?.first},SOUTH,#{block.s?.last}" if block.s?
+        puts "#{block.identifier},#{block.w?.first},WEST,#{block.w?.last}" if block.w?
       end
     end
     graph.add_vertices *vertices
   end
 end
 
-map = Map.new('input.txt')
-start_id = "0-0"
-final_path = []
-loop do
-  if start_id == "#{MAX}-#{MAX}"
-    final_path << start_id
-    break 
-  end
-  shortest = map.shortest_path(start_id)
+map = Map.new('sample.txt')
 
-  loop do
-    distance = shortest.first == "0-0" ? 3 : 4
-    same_row = shortest[0..(distance-1)].map {|p| p.split('-').first}.uniq.length == 1
-    same_col = shortest[0..(distance-1)].map {|p| p.split('-').last}.uniq.length == 1
-    if same_row || same_col
-      # puts " all same"
-      map.remove(shortest[distance-1],shortest[distance])
-      start_id = shortest[distance-1]
-      (distance-1).times do
-        # puts "Adding #{shortest.first.inspect}"
-        final_path << shortest.shift
-      end
-      break
-    else
-      # puts 'good to go'
-      # puts "Adding #{shortest.first.inspect}"
-      final_path << shortest.shift
-    end
-  end
-end
-
-# puts '*'*88
-
-total = 0
-map.lines.each_with_index do |line,y|
-  v = line.each_char.each_with_index.map do |char,x|
-    b = ObjectSpace.each_object(Block).detect {|e| e.x == x && e.y == y }
-    color = final_path.include?(b.identifier) ? :red : :white
-    total += final_path.include?(b.identifier) ? b.heat_loss : 0
-    char.send(color)
-  end 
-  puts v.join('')
-end
-puts total
-
-puts final_path.inspect
-r = final_path.map do |id|
-  ObjectSpace.each_object(Block).detect {|b| b.identifier == id}.heat_loss
-end
-puts r.inspect
-puts r.sum
